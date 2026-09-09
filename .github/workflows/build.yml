@@ -21,33 +21,34 @@ jobs:
             pod install
           fi
 
-      - name: Rilevamento Progetto e Compilazione
+      - name: Compilazione senza firma (Fix Exit Code 74)
         run: |
           mkdir -p $HOME/build
           
-          # Se esiste un file .xcworkspace usa quello, altrimenti usa .xcodeproj
           if [ -d *.xcworkspace ]; then
             WORKSPACE=$(ls -d *.xcworkspace | head -n 1)
             SCHEME=$(xcodebuild -workspace "$WORKSPACE" -list -json | jq -r '.workspace.schemes[0]')
-            echo "Compilazione Workspace: $WORKSPACE con Scheme: $SCHEME"
             xcodebuild archive \
               -workspace "$WORKSPACE" \
               -scheme "$SCHEME" \
               -sdk iphoneos \
               -configuration Release \
               -archivePath $HOME/build/app.xcarchive \
-              CODE_SIGNING_ALLOWED=NO
+              CODE_SIGNING_ALLOWED=NO \
+              CODE_SIGNING_REQUIRED=NO \
+              CODE_SIGN_IDENTITY=""
           else
             PROJECT=$(ls -d *.xcodeproj | head -n 1)
             SCHEME=$(xcodebuild -project "$PROJECT" -list -json | jq -r '.project.schemes[0]')
-            echo "Compilazione Progetto: $PROJECT con Scheme: $SCHEME"
             xcodebuild archive \
               -project "$PROJECT" \
               -scheme "$SCHEME" \
               -sdk iphoneos \
               -configuration Release \
               -archivePath $HOME/build/app.xcarchive \
-              CODE_SIGNING_ALLOWED=NO
+              CODE_SIGNING_ALLOWED=NO \
+              CODE_SIGNING_REQUIRED=NO \
+              CODE_SIGN_IDENTITY=""
           fi
 
       - name: Generazione pacchetto IPA
