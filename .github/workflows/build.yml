@@ -21,7 +21,7 @@ jobs:
             pod install
           fi
 
-      - name: Compilazione senza firma (Fix Xcode 16 Format)
+      - name: Compilazione con Firma Ad-Hoc (Fix 2 Failures)
         run: |
           mkdir -p $HOME/build
           
@@ -34,9 +34,9 @@ jobs:
               -sdk iphoneos \
               -configuration Release \
               -archivePath $HOME/build/app.xcarchive \
-              CODE_SIGNING_ALLOWED=NO \
+              CODE_SIGN_IDENTITY="-" \
               CODE_SIGNING_REQUIRED=NO \
-              CODE_SIGN_IDENTITY=""
+              AD_HOC_CODE_SIGNING_ALLOWED=YES
           else
             PROJECT=$(ls -d *.xcodeproj | head -n 1)
             SCHEME=$(xcodebuild -project "$PROJECT" -list -json | jq -r '.project.schemes[0]')
@@ -46,9 +46,9 @@ jobs:
               -sdk iphoneos \
               -configuration Release \
               -archivePath $HOME/build/app.xcarchive \
-              CODE_SIGNING_ALLOWED=NO \
+              CODE_SIGN_IDENTITY="-" \
               CODE_SIGNING_REQUIRED=NO \
-              CODE_SIGN_IDENTITY=""
+              AD_HOC_CODE_SIGNING_ALLOWED=YES
           fi
 
       - name: Generazione pacchetto IPA
