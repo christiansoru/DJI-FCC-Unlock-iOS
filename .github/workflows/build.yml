@@ -14,22 +14,17 @@ jobs:
       - name: Selezione Xcode 16
         run: sudo xcode-select -s /Applications/Xcode_16.0.app/Contents/Developer || sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 
-      - name: Rimuovi Assets bloccanti (Fix definitivo actool)
+      - name: Compilazione FreeFCC (Destinazione Fisica)
         run: |
-          find . -name "Assets.xcassets" -exec rm -rf {} + || true
-
-      - name: Compilazione FreeFCC
-        run: |
-          xcodebuild \
+          xcodebuild build \
             -project FreeFCC.xcodeproj \
             -scheme FreeFCC \
-            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
             -configuration Release \
             -derivedDataPath ./DerivedData \
-            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=YES \
-            AD_HOC_CODE_SIGNING_ALLOWED=YES
+            CODE_SIGN_IDENTITY=""
 
       - name: Generazione IPA
         run: |
