@@ -11,64 +11,36 @@ jobs:
       - name: Checkout del codice
         uses: actions/checkout@v4
 
-      - name: Selezione versione Xcode 16
+      - name: Selezione Xcode 16
         run: sudo xcode-select -s /Applications/Xcode_16.0.app/Contents/Developer || sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 
-      - name: Installazione CocoaPods (se presente)
-        run: |
-          if [ -f "Podfile" ]; then
-            echo "Podfile trovato, eseguo pod install..."
-            pod install
-          fi
+      - name: Pulizia Build
+        run: xcodebuild clean -project FreeFCC.xcodeproj -scheme FreeFCC
 
-      - name: Compilazione senza Simulator Runtime (Fix actool Error)
+      - name: Compilazione FreeFCC (Ad-Hoc Signing)
         run: |
-          mkdir -p $HOME/build/output
-          
-          if [ -d *.xcworkspace ]; then
-            WORKSPACE=$(ls -d *.xcworkspace | head -n 1)
-            SCHEME=$(xcodebuild -workspace "$WORKSPACE" -list -json | jq -r '.workspace.schemes[0]')
-            xcodebuild build \
-              -workspace "$WORKSPACE" \
-              -scheme "$SCHEME" \
-              -sdk iphoneos \
-              -configuration Release \
-              -derivedDataPath $HOME/build/DerivedData \
-              TARGETED_DEVICE_FAMILY="1" \
-              ACTION=build \
-              CODE_SIGNING_ALLOWED=NO \
-              CODE_SIGNING_REQUIRED=NO \
-              CODE_SIGN_IDENTITY="" \
-              CODE_SIGN_ENTITLEMENTS="" \
-              ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS=NO
-          else
-            PROJECT=$(ls -d *.xcodeproj | head -n 1)
-            SCHEME=$(xcodebuild -project "$PROJECT" -list -json | jq -r '.project.schemes[0]')
-            xcodebuild build \
-              -project "$PROJECT" \
-              -scheme "$SCHEME" \
-              -sdk iphoneos \
-              -configuration Release \
-              -derivedDataPath $HOME/build/DerivedData \
-              TARGETED_DEVICE_FAMILY="1" \
-              ACTION=build \
-              CODE_SIGNING_ALLOWED=NO \
-              CODE_SIGNING_REQUIRED=NO \
-              CODE_SIGN_IDENTITY="" \
-              CODE_SIGN_ENTITLEMENTS="" \
-              ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS=NO
-          fi
+          mkdir -p $HOME/build
+          xcodebuild build \
+            -project FreeFCC.xcodeproj \
+            -scheme FreeFCC \
+            -sdk iphoneos \
+            -configuration Release \
+            -derivedDataPath $HOME/build/DerivedData \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=YES \
+            AD_HOC_CODE_SIGNING_ALLOWED=YES
 
-      - name: Generazione pacchetto IPA
+      - name: Pacchettizzazione IPA
         run: |
           mkdir -p $HOME/build/Payload
-          APP_PATH=$(find $HOME/build/DerivedData -name "*.app" -type d | head -n 1)
-          echo "Trovata applicazione in: $APP_PATH"
+          APP_PATH=$(find $HOME/build/DerivedData -name "FreeFCC.app" -type d | head -n 1)
+          echo "App trovata in: $APP_PATH"
           cp -r "$APP_PATH" $HOME/build/Payload/
           cd $HOME/build
           zip -r DJI-FCC-Unlock.ipa Payload
 
-      - name: Salvataggio Artefatto (IPA)
+      - name: Caricamento Artefatto (IPA)
         uses: actions/upload-artifact@v4
         with:
           name: DJI-FCC-Unlock-Unsigned
