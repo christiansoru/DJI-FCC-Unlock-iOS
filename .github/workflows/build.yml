@@ -5,14 +5,14 @@ on:
 
 jobs:
   build:
-    runs-on: macos-14
+    runs-on: macos-15
 
     steps:
       - name: Checkout del codice
         uses: actions/checkout@v4
 
-      - name: Selezione versione Xcode
-        run: sudo xcode-select -s /Applications/Xcode_15.4.app/Contents/Developer
+      - name: Selezione versione Xcode 16
+        run: sudo xcode-select -s /Applications/Xcode_16.0.app/Contents/Developer || sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 
       - name: Installazione CocoaPods (se presente)
         run: |
@@ -21,7 +21,7 @@ jobs:
             pod install
           fi
 
-      - name: Compilazione senza firma (Fix Exit Code 74)
+      - name: Compilazione senza firma (Fix Xcode 16 Format)
         run: |
           mkdir -p $HOME/build
           
