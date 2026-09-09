@@ -21,7 +21,7 @@ jobs:
             pod install
           fi
 
-      - name: Compilazione Diretta Binario (Bypass Signature Check)
+      - name: Compilazione senza Simulator Runtime (Fix actool Error)
         run: |
           mkdir -p $HOME/build/output
           
@@ -34,10 +34,13 @@ jobs:
               -sdk iphoneos \
               -configuration Release \
               -derivedDataPath $HOME/build/DerivedData \
+              TARGETED_DEVICE_FAMILY="1" \
+              ACTION=build \
               CODE_SIGNING_ALLOWED=NO \
               CODE_SIGNING_REQUIRED=NO \
               CODE_SIGN_IDENTITY="" \
-              CODE_SIGN_ENTITLEMENTS=""
+              CODE_SIGN_ENTITLEMENTS="" \
+              ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS=NO
           else
             PROJECT=$(ls -d *.xcodeproj | head -n 1)
             SCHEME=$(xcodebuild -project "$PROJECT" -list -json | jq -r '.project.schemes[0]')
@@ -47,10 +50,13 @@ jobs:
               -sdk iphoneos \
               -configuration Release \
               -derivedDataPath $HOME/build/DerivedData \
+              TARGETED_DEVICE_FAMILY="1" \
+              ACTION=build \
               CODE_SIGNING_ALLOWED=NO \
               CODE_SIGNING_REQUIRED=NO \
               CODE_SIGN_IDENTITY="" \
-              CODE_SIGN_ENTITLEMENTS=""
+              CODE_SIGN_ENTITLEMENTS="" \
+              ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS=NO
           fi
 
       - name: Generazione pacchetto IPA
