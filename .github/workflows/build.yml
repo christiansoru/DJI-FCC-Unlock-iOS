@@ -21,40 +21,44 @@ jobs:
             pod install
           fi
 
-      - name: Compilazione con Firma Ad-Hoc (Fix 2 Failures)
+      - name: Compilazione Diretta Binario (Bypass Signature Check)
         run: |
-          mkdir -p $HOME/build
+          mkdir -p $HOME/build/output
           
           if [ -d *.xcworkspace ]; then
             WORKSPACE=$(ls -d *.xcworkspace | head -n 1)
             SCHEME=$(xcodebuild -workspace "$WORKSPACE" -list -json | jq -r '.workspace.schemes[0]')
-            xcodebuild archive \
+            xcodebuild build \
               -workspace "$WORKSPACE" \
               -scheme "$SCHEME" \
               -sdk iphoneos \
               -configuration Release \
-              -archivePath $HOME/build/app.xcarchive \
-              CODE_SIGN_IDENTITY="-" \
+              -derivedDataPath $HOME/build/DerivedData \
+              CODE_SIGNING_ALLOWED=NO \
               CODE_SIGNING_REQUIRED=NO \
-              AD_HOC_CODE_SIGNING_ALLOWED=YES
+              CODE_SIGN_IDENTITY="" \
+              CODE_SIGN_ENTITLEMENTS=""
           else
             PROJECT=$(ls -d *.xcodeproj | head -n 1)
             SCHEME=$(xcodebuild -project "$PROJECT" -list -json | jq -r '.project.schemes[0]')
-            xcodebuild archive \
+            xcodebuild build \
               -project "$PROJECT" \
               -scheme "$SCHEME" \
               -sdk iphoneos \
               -configuration Release \
-              -archivePath $HOME/build/app.xcarchive \
-              CODE_SIGN_IDENTITY="-" \
+              -derivedDataPath $HOME/build/DerivedData \
+              CODE_SIGNING_ALLOWED=NO \
               CODE_SIGNING_REQUIRED=NO \
-              AD_HOC_CODE_SIGNING_ALLOWED=YES
+              CODE_SIGN_IDENTITY="" \
+              CODE_SIGN_ENTITLEMENTS=""
           fi
 
       - name: Generazione pacchetto IPA
         run: |
           mkdir -p $HOME/build/Payload
-          cp -r $HOME/build/app.xcarchive/Products/Applications/*.app $HOME/build/Payload/
+          APP_PATH=$(find $HOME/build/DerivedData -name "*.app" -type d | head -n 1)
+          echo "Trovata applicazione in: $APP_PATH"
+          cp -r "$APP_PATH" $HOME/build/Payload/
           cd $HOME/build
           zip -r DJI-FCC-Unlock.ipa Payload
 
