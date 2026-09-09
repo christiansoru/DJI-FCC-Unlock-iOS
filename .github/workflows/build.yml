@@ -1,0 +1,35 @@
+name: Build iOS IPA
+
+on:
+  workflow_dispatch: # Ti permette di avviare la compilazione manualmente con un click
+
+jobs:
+  build:
+    runs-on: macos-14 # Usa un server Mac Apple Silicon di GitHub
+
+    steps:
+      - name: Checkout del codice
+        uses: actions/checkout@v4
+
+      - name: Selezione versione Xcode
+        run: sudo xcode-select -s /Applications/Xcode_15.4.app/Contents/Developer
+
+      - name: Setup Dipendenze (se usa CocoaPods)
+        run: |
+          if [ -f "Podfile" ]; then
+            pod install
+          fi
+
+      - name: Compilazione ed esportazione IPA
+        run: |
+          xcodebuild -project *.xcodeproj -scheme $(xcodebuild -list -json | jq -r '.project.schemes[0]') -sdk iphoneos -configuration Release archive -archivePath $HOME/build/app.xcarchive
+          xcodebuild -exportArchive -archivePath $HOME/build/app.xcarchive -exportOptionsPlist exportOptions.plist -exportPath $HOME/build/out
+        continue-on-error: true
+
+      - name: Salvataggio Artefatto (IPA)
+        uses: actions/upload-artifact@v4
+        with:
+          name: App-IPA-Unsigned
+          path: |
+            $HOME/build/out/*.ipa
+            $HOME/build/*.xcarchive
