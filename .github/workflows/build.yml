@@ -1,11 +1,11 @@
 name: Build iOS IPA
 
 on:
-  workflow_dispatch: # Ti permette di avviare la compilazione manualmente con un click
+  workflow_dispatch:
 
 jobs:
   build:
-    runs-on: macos-14 # Usa un server Mac Apple Silicon di GitHub
+    runs-on: macos-14
 
     steps:
       - name: Checkout del codice
@@ -14,22 +14,26 @@ jobs:
       - name: Selezione versione Xcode
         run: sudo xcode-select -s /Applications/Xcode_15.4.app/Contents/Developer
 
-      - name: Setup Dipendenze (se usa CocoaPods)
+      - name: Compilazione Archivio
         run: |
-          if [ -f "Podfile" ]; then
-            pod install
-          fi
+          mkdir -p $HOME/build
+          xcodebuild archive \
+            -project *.xcodeproj \
+            -scheme $(xcodebuild -list -json | jq -r '.project.schemes[0]') \
+            -sdk iphoneos \
+            -configuration Release \
+            -archivePath $HOME/build/app.xcarchive \
+            CODE_SIGNING_ALLOWED=NO
 
-      - name: Compilazione ed esportazione IPA
+      - name: Generazione IPA da Payload
         run: |
-          xcodebuild -project *.xcodeproj -scheme $(xcodebuild -list -json | jq -r '.project.schemes[0]') -sdk iphoneos -configuration Release archive -archivePath $HOME/build/app.xcarchive
-          xcodebuild -exportArchive -archivePath $HOME/build/app.xcarchive -exportOptionsPlist exportOptions.plist -exportPath $HOME/build/out
-        continue-on-error: true
+          mkdir -p $HOME/build/Payload
+          cp -r $HOME/build/app.xcarchive/Products/Applications/*.app $HOME/build/Payload/
+          cd $HOME/build
+          zip -r DJI-FCC-Unlock.ipa Payload
 
       - name: Salvataggio Artefatto (IPA)
         uses: actions/upload-artifact@v4
         with:
-          name: App-IPA-Unsigned
-          path: |
-            $HOME/build/out/*.ipa
-            $HOME/build/*.xcarchive
+          name: DJI-FCC-Unlock-Unsigned
+          path: $HOME/build/DJI-FCC-Unlock.ipa
